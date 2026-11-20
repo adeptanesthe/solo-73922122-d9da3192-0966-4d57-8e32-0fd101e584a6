@@ -1,1 +1,1 @@
-"""边缘设备两层卷积分块推理演示（FastAPI + NumPy, float64）。"""
+"""边缘设备两层卷积演示（FastAPI + NumPy）：float64 分块选型与整数量化对照。"""

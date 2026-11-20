@@ -9,13 +9,10 @@ import numpy as np
 from PIL import Image
 
 MAX_SIDE = 512
+MAX_SIDE_QUANT = 128
 
 
-def load_grayscale_png(data: bytes) -> np.ndarray:
-    """读取上传的 PNG，要求灰度模式，每边 <= 512，返回 float64 二维数组。
-
-    像素值归一化到 [0,1]。拒绝多通道（RGB/RGBA/P）等非灰度图像。
-    """
+def _open_png(data: bytes) -> Image.Image:
     if not data:
         raise ValueError("图像文件为空")
     try:
@@ -27,11 +24,33 @@ def load_grayscale_png(data: bytes) -> np.ndarray:
         raise ValueError(f"只接受 PNG 图像，收到 {im.format}")
     if im.mode != "L":
         raise ValueError(f"只接受灰度 PNG（mode=L），收到 mode={im.mode}")
+    return im
+
+
+def load_grayscale_png(data: bytes) -> np.ndarray:
+    """读取上传的 PNG，要求灰度模式，每边 <= 512，返回 float64 二维数组。
+
+    像素值归一化到 [0,1]。拒绝多通道（RGB/RGBA/P）等非灰度图像。
+    """
+    im = _open_png(data)
     if im.width > MAX_SIDE or im.height > MAX_SIDE:
         raise ValueError(
             f"图像每边至多 {MAX_SIDE} 像素，收到 {im.width}x{im.height}")
     arr = np.asarray(im, dtype=np.float64) / 255.0
     return arr
+
+
+def load_grayscale_png_u8(data: bytes) -> np.ndarray:
+    """量化对照页专用：灰度 PNG，每边 <= 128，直接返回 uint8 字节数组。
+
+    首层输入即灰度字节，尺度固定 1/255，因此不做归一化。
+    """
+    im = _open_png(data)
+    if im.width > MAX_SIDE_QUANT or im.height > MAX_SIDE_QUANT:
+        raise ValueError(
+            f"量化对照页图像每边至多 {MAX_SIDE_QUANT} 像素，"
+            f"收到 {im.width}x{im.height}")
+    return np.asarray(im, dtype=np.uint8).copy()
 
 
 def load_weights_json(data: bytes) -> dict:

@@ -48,8 +48,23 @@ def main(out_dir: str) -> None:
     (out / "weights.json").write_text(
         json.dumps(weights, indent=2), encoding="utf-8")
 
+    # ---- 量化对照专用零均值权重：浮点输出有正有负，默认尺度即可看到
+    #      量化新增/消失的裂缝判定差异 ----
+    qrng = np.random.default_rng(20261120)
+    qw1 = qrng.normal(0.0, 0.3, size=(4, 1, 3, 3)).tolist()
+    qb1 = [0.0, 0.0, 0.0, 0.0]
+    qw2 = qrng.normal(0.0, 0.3, size=(1, 4, 3, 3)).tolist()
+    qb2 = [0.0]
+    quant_weights = {
+        "layer1": {"weight": qw1, "bias": qb1},
+        "layer2": {"weight": qw2, "bias": qb2},
+    }
+    (out / "weights_quant_demo.json").write_text(
+        json.dumps(quant_weights, indent=2), encoding="utf-8")
+
     print(f"已生成样例：{out}/sample_crack_64.png, "
-          f"{out}/sample_random_8.png, {out}/weights.json")
+          f"{out}/sample_random_8.png, {out}/weights.json, "
+          f"{out}/weights_quant_demo.json")
 
 
 if __name__ == "__main__":
